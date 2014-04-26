@@ -13,7 +13,7 @@
       MergeCollection="True">
       <Item
         Name="WM/EncodedBy"
-        Value="Preset for Azure Media Encoder, 09/19/2012 " />
+        Value="ComAround Scandinavia AB " />
     </Metadata>
     <OutputFormat>
       <MP4OutputFormat
@@ -63,10 +63,8 @@
               <StreamInfo
                 Size="1280, 720">
                 <Bitrate>
-                  <ConstantBitrate
-                    Bitrate="4500"
-                    IsTwoPass="False"
-                    BufferWindow="00:00:05" />
+                  <VariableQualityBitrate
+                    Quality="22" />
                 </Bitrate>
               </StreamInfo>
             </Streams>

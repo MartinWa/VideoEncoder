@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -25,7 +26,7 @@ namespace VideoEncoder
             var cloudBlobClient = storageAccount.CreateCloudBlobClient();
             var mediaBlobContainer = cloudBlobClient.GetContainerReference(cloudBlobClient.BaseUri + "mediafiles");
             var basePath = Path.GetFullPath(@"..\..\..");
-            const string mediaFile = @"small.mp4";
+            const string mediaFile = @"video.avi";
             //var mediaFileWithPath = Path.Combine(basePath, mediaFile);
             const string encodingProfileFile = @"profile.xml";
             string encodingProfile;
@@ -41,11 +42,11 @@ namespace VideoEncoder
             }
 
             //mediaBlobContainer.CreateIfNotExists();
-            var blob = mediaBlobContainer.GetBlockBlobReference(mediaFile);
+            var originalVideoBlob = mediaBlobContainer.GetBlockBlobReference(mediaFile);
             //try
             //{
             //    using (var stream = File.OpenRead(mediaFileWithPath))
-            //        blob.UploadFromStream(stream);
+            //        originalVideoBlob.UploadFromStream(stream);
             //}
             //catch (Exception)
             //{
@@ -59,7 +60,7 @@ namespace VideoEncoder
             var uploadUri = new Uri(destinationLocator.Path);
             var assetContainerName = uploadUri.Segments[1];
             var assetContainer = cloudBlobClient.GetContainerReference(assetContainerName);
-            var fileName = HttpUtility.UrlDecode(Path.GetFileName(blob.Uri.AbsoluteUri));
+            var fileName = HttpUtility.UrlDecode(Path.GetFileName(originalVideoBlob.Uri.AbsoluteUri));
             var sourceCloudBlob = mediaBlobContainer.GetBlockBlobReference(fileName);
             sourceCloudBlob.FetchAttributes();
             if (sourceCloudBlob.Properties.Length > 0)
@@ -87,21 +88,15 @@ namespace VideoEncoder
             Console.WriteLine("Ready to use " + asset.Name);
 
             // Encode an MP4 file to a set of multibitrate MP4s.
-            var assetMultibitrateMp4S = EncodeMp4ToMultibitrateMp4S(asset, encodingProfile);
+            var watch = Stopwatch.StartNew();
+            var encodedAsset = EncodeAssetWithProfile(asset, encodingProfile);
+            watch.Stop();
+            Console.WriteLine("Encoding done, took " + TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).ToString(@"hh\h\:mm\m\:ss\s\:fff\m\s"));
 
-            // Publish the asset.
-            _mediaContext.Locators.Create(LocatorType.OnDemandOrigin, assetMultibitrateMp4S, AccessPermissions.Read, TimeSpan.FromDays(30));
-
-            // Get the URLs.
-            Console.WriteLine("Smooth Streaming URL:");
-            Console.WriteLine(assetMultibitrateMp4S.GetSmoothStreamingUri().ToString());
-            Console.WriteLine("MPEG DASH URL:");
-            Console.WriteLine(assetMultibitrateMp4S.GetMpegDashUri().ToString());
-            Console.WriteLine("HLS URL:");
-            Console.WriteLine(assetMultibitrateMp4S.GetHlsUri().ToString());
+            // TODO MW Copy encoded asset back to blob using the same code as above
         }
 
-        private static IAsset EncodeMp4ToMultibitrateMp4S(IAsset asset, string profile)
+        private static IAsset EncodeAssetWithProfile(IAsset asset, string profile)
         {
             // Create a new job.
             var job = _mediaContext.Jobs.Create("Convert MP4 to Smooth Streaming.");
