@@ -7,30 +7,27 @@ namespace VideoEncoder
 {
     static class VideoEncoder
     {
-        private static readonly string MediaFiles = Path.GetFullPath(@"");
-        private static readonly string SingleMp4File = Path.Combine(MediaFiles, @"small.mp4");
-        private static MediaServicesCredentials _cachedCredentials;
         private static CloudMediaContext _context;
-
-        // Media Services account information.
         private const string MediaServicesAccountName = @"zerodev"; // ConfigurationManager.AppSettings["MediaServicesAccountName"];
         private const string MediaServicesAccountKey = @"q6b6voUINwZpfIJZ82RI1ev4cM5SOmUSki9aM3Hx5cc="; //ConfigurationManager.AppSettings["MediaServicesAccountKey"];
 
         static void Main()
         {
             // Create and cache the Media Services credentials in a static class variable.
-            _cachedCredentials = new MediaServicesCredentials(MediaServicesAccountName, MediaServicesAccountKey);
+            var cachedCredentials = new MediaServicesCredentials(MediaServicesAccountName, MediaServicesAccountKey);
 
             // Use the cached credentials to create CloudMediaContext.
-            _context = new CloudMediaContext(_cachedCredentials);
+            _context = new CloudMediaContext(cachedCredentials);
 
+            var mediaFiles = Path.GetFullPath(@"..\..\..");
+            var singleMp4File = Path.Combine(mediaFiles, @"small.mp4");
             // Use the SDK extension method to create a new asset by 
             // uploading a mezzanine file from a local path.
-            IAsset asset = _context.Assets.CreateFromFile(SingleMp4File,
+            var asset = _context.Assets.CreateFromFile(singleMp4File,
                 AssetCreationOptions.None,
                 (af, p) =>
                 {
-                    Console.WriteLine("Uploading '{0}' - Progress: {1:0.##}%", ((IAssetFile)p).Name, ((UploadProgressChangedEventArgs)p).Progress);
+                    Console.WriteLine("Uploading '{0}' - Progress: {1:0.##}%", af.Name, p.Progress);
                 });
 
             // Encode an MP4 file to a set of multibitrate MP4s.
@@ -57,7 +54,7 @@ namespace VideoEncoder
             // such as encoding, format conversion, encrypting, or decrypting media content.
             //
             // Use the SDK extension method to  get a reference to the Windows Azure Media Encoder.
-            IMediaProcessor encoder = _context.MediaProcessors.GetLatestMediaProcessorByName(MediaProcessorNames.WindowsAzureMediaEncoder);
+            var encoder = _context.MediaProcessors.GetLatestMediaProcessorByName(MediaProcessorNames.WindowsAzureMediaEncoder);
 
             // Add task 1 - Encode single MP4 into multibitrate MP4s.
             var adpativeBitrateTask = job.Tasks.AddNew("MP4 to Adaptive Bitrate Task", encoder, "H264 Adaptive Bitrate MP4 Set 720p", TaskOptions.None);
@@ -74,8 +71,8 @@ namespace VideoEncoder
             job.Submit();
             job = job.StartExecutionProgressTask(j =>
             {
-                Console.WriteLine("Job state: {0}", ((IJob)j).State);
-                Console.WriteLine("Job progress: {0:0.##}%", ((IJob)j).GetOverallProgress());
+                Console.WriteLine("Job state: {0}", j.State);
+                Console.WriteLine("Job progress: {0:0.##}%", j.GetOverallProgress());
             }, CancellationToken.None).Result;
 
             // Get the output asset that contains the smooth stream.
