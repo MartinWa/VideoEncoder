@@ -1,21 +1,46 @@
 <?xml version="1.0" encoding="utf-16"?>
-<!--Created with Expression Encoder version 4.0.4276.0-->
+<!--Created for Azure Media Encoder, September 19 2012 -->
 <Preset
   Version="4.0">
   <Job />
   <MediaFile
-    WindowsMediaProfileLanguage="en-US"
-    VideoResizeMode="Letterbox">
+    DeinterlaceMode="AutoPixelAdaptive"
+    ResizeQuality="Super"
+    NormalizeAudio="True"
+    AudioGainLevel="1"
+    VideoResizeMode="Stretch">
+    <Metadata
+      MergeCollection="True">
+      <Item
+        Name="WM/EncodedBy"
+        Value="Preset for Azure Media Encoder, 09/19/2012 " />
+    </Metadata>
     <OutputFormat>
       <MP4OutputFormat
         StreamCompatibility="Standard">
-        <VideoProfile>
-          <BaselineH264VideoProfile
-            RDOptimizationMode="Speed"
-            HadamardTransform="False"
-            SubBlockMotionSearchMode="Speed"
-            MultiReferenceMotionSearchMode="Speed"
-            ReferenceBFrames="True"
+        <AudioProfile Condition="SourceContainsAudio">
+          <AacAudioProfile
+            Codec="AAC"
+            Channels="2"
+            BitsPerSample="16"
+            SamplesPerSecond="44100">
+            <Bitrate>
+              <ConstantBitrate
+                Bitrate="128"
+                IsTwoPass="False"
+                BufferWindow="00:00:00" />
+            </Bitrate>
+          </AacAudioProfile>
+        </AudioProfile>
+        <VideoProfile Condition="SourceContainsVideo">
+          <MainH264VideoProfile
+            BFrameCount="3"
+            EntropyMode="Cabac"
+            RDOptimizationMode="Quality"
+            HadamardTransform="True"
+            SubBlockMotionSearchMode="Quality"
+            MultiReferenceMotionSearchMode="Quality"
+            ReferenceBFrames="False"
             AdaptiveBFrames="True"
             SceneChangeDetector="True"
             FastIntraDecisions="False"
@@ -26,7 +51,7 @@
             InLoopFilter="True"
             MEPartitionLevel="EightByEight"
             ReferenceFrames="4"
-            SearchRange="32"
+            SearchRange="128"
             AutoFit="True"
             Force16Pixels="False"
             FrameRate="0"
@@ -34,34 +59,19 @@
             SmoothStreaming="False"
             NumberOfEncoderThreads="0">
             <Streams
-              AutoSize="False"
-              FreezeSort="False">
-              <StreamInfo>
+              AutoSize="False">
+              <StreamInfo
+                Size="1280, 720">
                 <Bitrate>
                   <ConstantBitrate
-                    Bitrate="4000"
+                    Bitrate="4500"
                     IsTwoPass="False"
-                    BufferWindow="00:00:04" />
+                    BufferWindow="00:00:05" />
                 </Bitrate>
               </StreamInfo>
             </Streams>
-          </BaselineH264VideoProfile>
+          </MainH264VideoProfile>
         </VideoProfile>
-        <AudioProfile>
-          <AacAudioProfile
-            Level="AacLC"
-            Codec="AAC"
-            Channels="2"
-            BitsPerSample="16"
-            SamplesPerSecond="44100">
-            <Bitrate>
-              <ConstantBitrate
-                Bitrate="160"
-                IsTwoPass="False"
-                BufferWindow="00:00:00" />
-            </Bitrate>
-          </AacAudioProfile>
-        </AudioProfile>
       </MP4OutputFormat>
     </OutputFormat>
   </MediaFile>
