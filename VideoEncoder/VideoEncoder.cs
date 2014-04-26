@@ -26,10 +26,12 @@ namespace VideoEncoder
 
             // Use the SDK extension method to create a new asset by 
             // uploading a mezzanine file from a local path.
-            var asset = _context.Assets.CreateFromFile(SingleMp4File, AssetCreationOptions.None, (af, p) =>
-            {
-                Console.WriteLine("Uploading '{0}' - Progress: {1:0.##}%", af.Name, p.Progress);
-            });
+            IAsset asset = _context.Assets.CreateFromFile(SingleMp4File,
+                AssetCreationOptions.None,
+                (af, p) =>
+                {
+                    Console.WriteLine("Uploading '{0}' - Progress: {1:0.##}%", ((IAssetFile)p).Name, ((UploadProgressChangedEventArgs)p).Progress);
+                });
 
             // Encode an MP4 file to a set of multibitrate MP4s.
             var assetMultibitrateMp4S = EncodeMp4ToMultibitrateMp4S(asset);
@@ -72,8 +74,8 @@ namespace VideoEncoder
             job.Submit();
             job = job.StartExecutionProgressTask(j =>
             {
-                Console.WriteLine("Job state: {0}", j.State);
-                Console.WriteLine("Job progress: {0:0.##}%", j.GetOverallProgress());
+                Console.WriteLine("Job state: {0}", ((IJob)j).State);
+                Console.WriteLine("Job progress: {0:0.##}%", ((IJob)j).GetOverallProgress());
             }, CancellationToken.None).Result;
 
             // Get the output asset that contains the smooth stream.
