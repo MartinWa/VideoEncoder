@@ -14,8 +14,8 @@ namespace VideoEncoder
         private static CloudMediaContext _mediaContext;
         private const string MediaServicesAccountName = @"zerodev"; // ConfigurationManager.AppSettings["MediaServicesAccountName"];
         private const string MediaServicesAccountKey = @"q6b6voUINwZpfIJZ82RI1ev4cM5SOmUSki9aM3Hx5cc="; //ConfigurationManager.AppSettings["MediaServicesAccountKey"];
-        private const string MediaServicesStorageAccountName = @"zerodev";
-        private const string MediaServicesStorageAccountKey = @"Cd9iLf0edc3zcmASfK/hj1KzIKGXJWgnmv5zKPBrAraGyaKDvKdyzyWZDaTE/I0N16dceMuX8pnqL84e3vQY0w==";
+        private const string MediaServicesStorageAccountName = @"zerodev"; // ConfigurationManager.AppSettings["MediaServicesAccountName"];
+        private const string MediaServicesStorageAccountKey = @"Cd9iLf0edc3zcmASfK/hj1KzIKGXJWgnmv5zKPBrAraGyaKDvKdyzyWZDaTE/I0N16dceMuX8pnqL84e3vQY0w=="; // ConfigurationManager.AppSettings["MediaServicesAccountName"];
         static void Main()
         {
             var mediaServicesCredentials = new MediaServicesCredentials(MediaServicesAccountName, MediaServicesAccountKey);
@@ -26,23 +26,32 @@ namespace VideoEncoder
             var mediaBlobContainer = cloudBlobClient.GetContainerReference(cloudBlobClient.BaseUri + "mediafiles");
             var basePath = Path.GetFullPath(@"..\..\..");
             const string mediaFile = @"small.mp4";
-            // var singleMp4File = Path.Combine(basePath, mediaFile);
+            //var mediaFileWithPath = Path.Combine(basePath, mediaFile);
             const string encodingProfileFile = @"profile.xml";
-            var encodingProfile = "H264 Adaptive Bitrate MP4 Set 720p";
+            string encodingProfile;
+            var encodingFileWithPath = Path.Combine(basePath, encodingProfileFile);
             try
             {
-                encodingProfile = File.ReadAllText(Path.Combine(basePath, encodingProfileFile));
+                encodingProfile = File.ReadAllText(encodingFileWithPath);
             }
             catch (Exception)
             {
-                Console.WriteLine("No profile found at " );
+                Console.WriteLine("No profile found at " + encodingFileWithPath);
                 return;
             }
 
-            // mediaBlobContainer.CreateIfNotExists();
+            //mediaBlobContainer.CreateIfNotExists();
             var blob = mediaBlobContainer.GetBlockBlobReference(mediaFile);
-            // using (var stream = File.OpenRead(singleMp4File))
-            // blob.UploadFromStream(stream);
+            //try
+            //{
+            //    using (var stream = File.OpenRead(mediaFileWithPath))
+            //        blob.UploadFromStream(stream);
+            //}
+            //catch (Exception)
+            //{
+            //    Console.WriteLine("No video file found at " + mediaFileWithPath);
+            //    return;
+            //}
 
             var asset = _mediaContext.Assets.Create("mediaAsset", AssetCreationOptions.None);
             var writePolicy = _mediaContext.AccessPolicies.Create("writePolicy", TimeSpan.FromMinutes(120), AccessPermissions.Write);

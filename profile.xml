@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-16"?>
+<!--Created with Expression Encoder version 4.0.4276.0-->
+<Preset
+  Version="4.0">
+  <Job />
+  <MediaFile
+    WindowsMediaProfileLanguage="en-US"
+    VideoResizeMode="Letterbox">
+    <OutputFormat>
+      <MP4OutputFormat
+        StreamCompatibility="Standard">
+        <VideoProfile>
+          <BaselineH264VideoProfile
+            RDOptimizationMode="Speed"
+            HadamardTransform="False"
+            SubBlockMotionSearchMode="Speed"
+            MultiReferenceMotionSearchMode="Speed"
+            ReferenceBFrames="True"
+            AdaptiveBFrames="True"
+            SceneChangeDetector="True"
+            FastIntraDecisions="False"
+            FastInterDecisions="False"
+            SubPixelMode="Quarter"
+            SliceCount="0"
+            KeyFrameDistance="00:00:05"
+            InLoopFilter="True"
+            MEPartitionLevel="EightByEight"
+            ReferenceFrames="4"
+            SearchRange="32"
+            AutoFit="True"
+            Force16Pixels="False"
+            FrameRate="0"
+            SeparateFilesPerStream="True"
+            SmoothStreaming="False"
+            NumberOfEncoderThreads="0">
+            <Streams
+              AutoSize="False"
+              FreezeSort="False">
+              <StreamInfo>
+                <Bitrate>
+                  <ConstantBitrate
+                    Bitrate="4000"
+                    IsTwoPass="False"
+                    BufferWindow="00:00:04" />
+                </Bitrate>
+              </StreamInfo>
+            </Streams>
+          </BaselineH264VideoProfile>
+        </VideoProfile>
+        <AudioProfile>
+          <AacAudioProfile
+            Level="AacLC"
+            Codec="AAC"
+            Channels="2"
+            BitsPerSample="16"
+            SamplesPerSecond="44100">
+            <Bitrate>
+              <ConstantBitrate
+                Bitrate="160"
+                IsTwoPass="False"
+                BufferWindow="00:00:00" />
+            </Bitrate>
+          </AacAudioProfile>
+        </AudioProfile>
+      </MP4OutputFormat>
+    </OutputFormat>
+  </MediaFile>
+</Preset>
