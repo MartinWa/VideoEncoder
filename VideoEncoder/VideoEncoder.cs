@@ -1,40 +1,73 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
+using System.Web;
 using Microsoft.WindowsAzure.MediaServices.Client;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Auth;
 
 namespace VideoEncoder
 {
     static class VideoEncoder
     {
-        private static CloudMediaContext _context;
+        private static CloudMediaContext _mediaContext;
         private const string MediaServicesAccountName = @"zerodev"; // ConfigurationManager.AppSettings["MediaServicesAccountName"];
         private const string MediaServicesAccountKey = @"q6b6voUINwZpfIJZ82RI1ev4cM5SOmUSki9aM3Hx5cc="; //ConfigurationManager.AppSettings["MediaServicesAccountKey"];
-
+        private const string MediaServicesStorageAccountName = @"zerodev";
+        private const string MediaServicesStorageAccountKey = @"Cd9iLf0edc3zcmASfK/hj1KzIKGXJWgnmv5zKPBrAraGyaKDvKdyzyWZDaTE/I0N16dceMuX8pnqL84e3vQY0w==";
         static void Main()
         {
-            // Create and cache the Media Services credentials in a static class variable.
-            var cachedCredentials = new MediaServicesCredentials(MediaServicesAccountName, MediaServicesAccountKey);
+            var mediaServicesCredentials = new MediaServicesCredentials(MediaServicesAccountName, MediaServicesAccountKey);
+            var storageCredentials = new StorageCredentials(MediaServicesStorageAccountName, MediaServicesStorageAccountKey);
+            _mediaContext = new CloudMediaContext(mediaServicesCredentials);
+            var storageAccount = new CloudStorageAccount(storageCredentials, true);
+            var cloudBlobClient = storageAccount.CreateCloudBlobClient();
+            var mediaBlobContainer = cloudBlobClient.GetContainerReference(cloudBlobClient.BaseUri + "mediafiles");
+            var mediaPath = Path.GetFullPath(@"..\..\..");
+            var mediaFile = @"small.mp4";
+            var singleMp4File = Path.Combine(mediaPath, mediaFile);
 
-            // Use the cached credentials to create CloudMediaContext.
-            _context = new CloudMediaContext(cachedCredentials);
+            mediaBlobContainer.CreateIfNotExists();
+            var blob = mediaBlobContainer.GetBlockBlobReference(mediaFile);
+            using (var stream = File.OpenRead(singleMp4File))
+                blob.UploadFromStream(stream);
 
-            var mediaFiles = Path.GetFullPath(@"..\..\..");
-            var singleMp4File = Path.Combine(mediaFiles, @"small.mp4");
-            // Use the SDK extension method to create a new asset by 
-            // uploading a mezzanine file from a local path.
-            var asset = _context.Assets.CreateFromFile(singleMp4File,
-                AssetCreationOptions.None,
-                (af, p) =>
+            var asset = _mediaContext.Assets.Create("mediaAsset", AssetCreationOptions.None);
+            var writePolicy = _mediaContext.AccessPolicies.Create("writePolicy", TimeSpan.FromMinutes(120), AccessPermissions.Write);
+            var destinationLocator = _mediaContext.Locators.CreateLocator(LocatorType.Sas, asset, writePolicy);
+            var uploadUri = new Uri(destinationLocator.Path);
+            var assetContainerName = uploadUri.Segments[1];
+            var assetContainer = cloudBlobClient.GetContainerReference(assetContainerName);
+            var fileName = HttpUtility.UrlDecode(Path.GetFileName(blob.Uri.AbsoluteUri));
+            var sourceCloudBlob = mediaBlobContainer.GetBlockBlobReference(fileName);
+            sourceCloudBlob.FetchAttributes();
+            if (sourceCloudBlob.Properties.Length > 0)
+            {
+                asset.AssetFiles.Create(fileName);
+                var destinationBlob = assetContainer.GetBlockBlobReference(fileName);
+                destinationBlob.DeleteIfExists();
+                destinationBlob.StartCopyFromBlob(sourceCloudBlob);
+                destinationBlob.FetchAttributes();
+                if (sourceCloudBlob.Properties.Length != destinationBlob.Properties.Length)
                 {
-                    Console.WriteLine("Uploading '{0}' - Progress: {1:0.##}%", af.Name, p.Progress);
-                });
+                    Console.WriteLine("Failed to copy");
+                    return;
+                }
+            }
+            destinationLocator.Delete();
+            writePolicy.Delete();
+            // ReSharper disable once ReplaceWithSingleCallToFirstOrDefault
+            asset = _mediaContext.Assets.Where(a => a.Id == asset.Id).FirstOrDefault();
+            if (asset == null)
+                return;
+            Console.WriteLine("Ready to use " + asset.Name);
 
             // Encode an MP4 file to a set of multibitrate MP4s.
             var assetMultibitrateMp4S = EncodeMp4ToMultibitrateMp4S(asset);
 
             // Publish the asset.
-            _context.Locators.Create(LocatorType.OnDemandOrigin, assetMultibitrateMp4S, AccessPermissions.Read, TimeSpan.FromDays(30));
+            _mediaContext.Locators.Create(LocatorType.OnDemandOrigin, assetMultibitrateMp4S, AccessPermissions.Read, TimeSpan.FromDays(30));
 
             // Get the URLs.
             Console.WriteLine("Smooth Streaming URL:");
@@ -48,13 +81,13 @@ namespace VideoEncoder
         private static IAsset EncodeMp4ToMultibitrateMp4S(IAsset asset)
         {
             // Create a new job.
-            var job = _context.Jobs.Create("Convert MP4 to Smooth Streaming.");
+            var job = _mediaContext.Jobs.Create("Convert MP4 to Smooth Streaming.");
 
             // In Media Services, a media processor is a component that handles a specific processing task, 
             // such as encoding, format conversion, encrypting, or decrypting media content.
             //
             // Use the SDK extension method to  get a reference to the Windows Azure Media Encoder.
-            var encoder = _context.MediaProcessors.GetLatestMediaProcessorByName(MediaProcessorNames.WindowsAzureMediaEncoder);
+            var encoder = _mediaContext.MediaProcessors.GetLatestMediaProcessorByName(MediaProcessorNames.WindowsAzureMediaEncoder);
 
             // Add task 1 - Encode single MP4 into multibitrate MP4s.
             var adpativeBitrateTask = job.Tasks.AddNew("MP4 to Adaptive Bitrate Task", encoder, "H264 Adaptive Bitrate MP4 Set 720p", TaskOptions.None);
