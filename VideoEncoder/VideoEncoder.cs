@@ -24,14 +24,25 @@ namespace VideoEncoder
             var storageAccount = new CloudStorageAccount(storageCredentials, true);
             var cloudBlobClient = storageAccount.CreateCloudBlobClient();
             var mediaBlobContainer = cloudBlobClient.GetContainerReference(cloudBlobClient.BaseUri + "mediafiles");
-            var mediaPath = Path.GetFullPath(@"..\..\..");
-            var mediaFile = @"small.mp4";
-            var singleMp4File = Path.Combine(mediaPath, mediaFile);
+            var basePath = Path.GetFullPath(@"..\..\..");
+            const string mediaFile = @"small.mp4";
+            // var singleMp4File = Path.Combine(basePath, mediaFile);
+            const string encodingProfileFile = @"profile.xml";
+            var encodingProfile = "H264 Adaptive Bitrate MP4 Set 720p";
+            try
+            {
+                encodingProfile = File.ReadAllText(Path.Combine(basePath, encodingProfileFile));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("No profile found at " );
+                return;
+            }
 
-            mediaBlobContainer.CreateIfNotExists();
+            // mediaBlobContainer.CreateIfNotExists();
             var blob = mediaBlobContainer.GetBlockBlobReference(mediaFile);
-            using (var stream = File.OpenRead(singleMp4File))
-                blob.UploadFromStream(stream);
+            // using (var stream = File.OpenRead(singleMp4File))
+            // blob.UploadFromStream(stream);
 
             var asset = _mediaContext.Assets.Create("mediaAsset", AssetCreationOptions.None);
             var writePolicy = _mediaContext.AccessPolicies.Create("writePolicy", TimeSpan.FromMinutes(120), AccessPermissions.Write);
@@ -60,11 +71,14 @@ namespace VideoEncoder
             // ReSharper disable once ReplaceWithSingleCallToFirstOrDefault
             asset = _mediaContext.Assets.Where(a => a.Id == asset.Id).FirstOrDefault();
             if (asset == null)
+            {
+                Console.WriteLine("Asset is null");
                 return;
+            }
             Console.WriteLine("Ready to use " + asset.Name);
 
             // Encode an MP4 file to a set of multibitrate MP4s.
-            var assetMultibitrateMp4S = EncodeMp4ToMultibitrateMp4S(asset);
+            var assetMultibitrateMp4S = EncodeMp4ToMultibitrateMp4S(asset, encodingProfile);
 
             // Publish the asset.
             _mediaContext.Locators.Create(LocatorType.OnDemandOrigin, assetMultibitrateMp4S, AccessPermissions.Read, TimeSpan.FromDays(30));
@@ -78,7 +92,7 @@ namespace VideoEncoder
             Console.WriteLine(assetMultibitrateMp4S.GetHlsUri().ToString());
         }
 
-        private static IAsset EncodeMp4ToMultibitrateMp4S(IAsset asset)
+        private static IAsset EncodeMp4ToMultibitrateMp4S(IAsset asset, string profile)
         {
             // Create a new job.
             var job = _mediaContext.Jobs.Create("Convert MP4 to Smooth Streaming.");
@@ -88,17 +102,16 @@ namespace VideoEncoder
             //
             // Use the SDK extension method to  get a reference to the Windows Azure Media Encoder.
             var encoder = _mediaContext.MediaProcessors.GetLatestMediaProcessorByName(MediaProcessorNames.WindowsAzureMediaEncoder);
-
             // Add task 1 - Encode single MP4 into multibitrate MP4s.
-            var adpativeBitrateTask = job.Tasks.AddNew("MP4 to Adaptive Bitrate Task", encoder, "H264 Adaptive Bitrate MP4 Set 720p", TaskOptions.None);
+            var task = job.Tasks.AddNew("Encoding " + asset.Name + " to custom profile", encoder, profile, TaskOptions.None);
 
             // Specify the input Asset
-            adpativeBitrateTask.InputAssets.Add(asset);
+            task.InputAssets.Add(asset);
 
             // Add an output asset to contain the results of the job. 
             // This output is specified as AssetCreationOptions.None, which 
             // means the output asset is in the clear (unencrypted).
-            adpativeBitrateTask.OutputAssets.AddNew("Multibitrate MP4s", AssetCreationOptions.None);
+            task.OutputAssets.AddNew(asset.Name + " as custom profile", AssetCreationOptions.None);
 
             // Submit the job and wait until it is completed.
             job.Submit();
