@@ -6,9 +6,10 @@
   <MediaFile
     DeinterlaceMode="AutoPixelAdaptive"
     ResizeQuality="Super"
-    NormalizeAudio="True"
+    NormalizeAudio="False"
     AudioGainLevel="1"
-    VideoResizeMode="Stretch">
+    VideoResizeMode="Stretch"
+    ThumbnailMode="BestFrame">
     <Metadata
       MergeCollection="True">
       <Item

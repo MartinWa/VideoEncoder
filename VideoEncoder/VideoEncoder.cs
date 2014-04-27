@@ -26,7 +26,7 @@ namespace VideoEncoder
             var cloudBlobClient = storageAccount.CreateCloudBlobClient();
             var mediaBlobContainer = cloudBlobClient.GetContainerReference(cloudBlobClient.BaseUri + "mediafiles");
             var basePath = Path.GetFullPath(@"..\..\..");
-            const string mediaFile = @"video.avi";
+            const string mediaFile = @"3.mp4";
             //var mediaFileWithPath = Path.Combine(basePath, mediaFile);
             const string encodingProfileFile = @"profile.xml";
             string encodingProfile;
@@ -54,7 +54,7 @@ namespace VideoEncoder
             //    return;
             //}
 
-            var asset = _mediaContext.Assets.Create("mediaAsset", AssetCreationOptions.None);
+            var asset = _mediaContext.Assets.Create(mediaFile, AssetCreationOptions.None);
             var writePolicy = _mediaContext.AccessPolicies.Create("writePolicy", TimeSpan.FromMinutes(120), AccessPermissions.Write);
             var destinationLocator = _mediaContext.Locators.CreateLocator(LocatorType.Sas, asset, writePolicy);
             var uploadUri = new Uri(destinationLocator.Path);
@@ -99,7 +99,7 @@ namespace VideoEncoder
         private static IAsset EncodeAssetWithProfile(IAsset asset, string profile)
         {
             // Create a new job.
-            var job = _mediaContext.Jobs.Create("Convert MP4 to Smooth Streaming.");
+            var job = _mediaContext.Jobs.Create(asset.Name + " as constant quality 22");
 
             // In Media Services, a media processor is a component that handles a specific processing task, 
             // such as encoding, format conversion, encrypting, or decrypting media content.
