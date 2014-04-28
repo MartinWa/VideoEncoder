@@ -26,7 +26,7 @@ namespace VideoEncoder
             var cloudBlobClient = storageAccount.CreateCloudBlobClient();
             var mediaBlobContainer = cloudBlobClient.GetContainerReference(cloudBlobClient.BaseUri + "mediafiles");
             var basePath = Path.GetFullPath(@"..\..\..");
-            const string mediaFile = @"3.mp4";
+            const string mediaFile = @"7.mp4";
             //var mediaFileWithPath = Path.Combine(basePath, mediaFile);
             const string encodingProfileFile = @"profile.xml";
             string encodingProfile;

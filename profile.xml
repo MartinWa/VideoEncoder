@@ -8,7 +8,7 @@
     ResizeQuality="Super"
     NormalizeAudio="False"
     AudioGainLevel="1"
-    VideoResizeMode="Stretch"
+    VideoResizeMode="Letterbox"
     ThumbnailMode="BestFrame">
     <Metadata
       MergeCollection="True">
@@ -65,7 +65,7 @@
                 Size="1280, 720">
                 <Bitrate>
                   <VariableQualityBitrate
-                    Quality="22" />
+                    Quality="24" />
                 </Bitrate>
               </StreamInfo>
             </Streams>
